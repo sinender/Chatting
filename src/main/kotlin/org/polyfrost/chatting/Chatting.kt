@@ -1,11 +1,15 @@
 package org.polyfrost.chatting
 
+import cc.polyfrost.oneconfig.events.EventManager
+import cc.polyfrost.oneconfig.events.event.InitializationEvent
+import cc.polyfrost.oneconfig.libs.eventbus.Subscribe
 import cc.polyfrost.oneconfig.libs.universal.UDesktop
 import cc.polyfrost.oneconfig.libs.universal.UMinecraft
 import cc.polyfrost.oneconfig.utils.Notifications
 import cc.polyfrost.oneconfig.utils.commands.CommandManager
 import cc.polyfrost.oneconfig.utils.dsl.browseLink
 import cc.polyfrost.oneconfig.utils.dsl.mc
+import cc.polyfrost.oneconfig.utils.dsl.runAsync
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.*
 import net.minecraft.client.renderer.GlStateManager
@@ -13,7 +17,6 @@ import net.minecraft.client.renderer.OpenGlHelper
 import net.minecraft.client.settings.KeyBinding
 import net.minecraft.client.shader.Framebuffer
 import net.minecraft.util.MathHelper
-import net.minecraftforge.client.event.RenderGameOverlayEvent
 import net.minecraftforge.common.MinecraftForge.EVENT_BUS
 import net.minecraftforge.fml.client.registry.ClientRegistry
 import net.minecraftforge.fml.common.Loader
@@ -61,8 +64,6 @@ object Chatting {
     var isHychat = false
         private set
 
-    private var time = -1L
-    var deltaTime = 17L
     private var lastPressed = false;
     var peaking = false
         get() = ChattingConfig.chatPeak && field
@@ -156,19 +157,6 @@ object Chatting {
     }
 
     @SubscribeEvent
-    fun onRenderTick(event: RenderGameOverlayEvent.Pre) {
-        if (event.type == RenderGameOverlayEvent.ElementType.ALL) {
-            if (time == -1L) {
-                time = UMinecraft.getTime()
-            } else {
-                val currentTime = UMinecraft.getTime()
-                deltaTime = currentTime - time
-                time = currentTime
-            }
-        }
-    }
-
-    @SubscribeEvent
     fun onTickEvent(event: TickEvent.ClientTickEvent) {
         if (event.phase == TickEvent.Phase.START && Minecraft.getMinecraft().theWorld != null && Minecraft.getMinecraft().thePlayer != null && (Minecraft.getMinecraft().currentScreen == null || Minecraft.getMinecraft().currentScreen is GuiChat)) {
             if (doTheThing) {
@@ -212,10 +200,14 @@ object Chatting {
         return if (opened) ChattingConfig.chatWindow.focusedHeight else ChattingConfig.chatWindow.unfocusedHeight
     }
 
+    fun getChatWidth(): Int {
+        return ChattingConfig.chatWindow.customWidth
+    }
+
     fun screenshotLine(line: ChatLine): BufferedImage? {
         val hud = Minecraft.getMinecraft().ingameGUI
         val chat = hud.chatGUI
-        val i = MathHelper.floor_float(chat.chatWidth / chat.chatScale)
+        val i = MathHelper.floor_float(getChatWidth() / chat.chatScale)
         return screenshot(
             hashMapOf<ChatLine, String>().also {
                 GuiUtilRenderComponents.splitText(

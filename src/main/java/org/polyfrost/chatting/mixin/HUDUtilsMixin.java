@@ -6,6 +6,7 @@ import cc.polyfrost.oneconfig.config.core.ConfigUtils;
 import cc.polyfrost.oneconfig.config.elements.*;
 import cc.polyfrost.oneconfig.hud.*;
 import cc.polyfrost.oneconfig.internal.hud.HudCore;
+import net.minecraft.client.Minecraft;
 import org.polyfrost.chatting.chat.*;
 import org.polyfrost.chatting.config.ChattingConfig;
 import org.spongepowered.asm.mixin.*;
@@ -46,6 +47,9 @@ public class HUDUtilsMixin {
             case "showInDebug":
             case "positionAlignment":
             case "scale":
+            case "locked":
+            case "ignoreCaching":
+            case "resetPosition":
                 if (isInputBox) return true;
                 break;
             case "inputFieldDraft":
@@ -54,6 +58,11 @@ public class HUDUtilsMixin {
             case "focusedHeight":
             case "unfocusedHeight":
                 option.addDependency("Custom Chat Height", () -> ChattingConfig.INSTANCE.getChatWindow().getCustomChatHeight());
+                option.addListener(() -> Minecraft.getMinecraft().ingameGUI.getChatGUI().refreshChat());
+                break;
+            case "customWidth":
+                option.addDependency("Custom Chat Width", () -> ChattingConfig.INSTANCE.getChatWindow().getCustomChatWidth());
+                option.addListener(() -> Minecraft.getMinecraft().ingameGUI.getChatGUI().refreshChat());
                 break;
         }
 
